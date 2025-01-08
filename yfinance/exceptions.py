@@ -9,7 +9,9 @@ class YFDataException(YFException):
 
 class YFNotImplementedError(NotImplementedError):
     def __init__(self, method_name):
-        super().__init__(f"Have not implemented fetching '{method_name}' from Yahoo API")
+        super().__init__(
+            f"Have not implemented fetching '{method_name}' from Yahoo API"
+        )
 
 
 class YFTickerMissingError(YFException):
@@ -27,7 +29,7 @@ class YFTzMissingError(YFTickerMissingError):
 class YFPricesMissingError(YFTickerMissingError):
     def __init__(self, ticker, debug_info):
         self.debug_info = debug_info
-        if debug_info != '':
+        if debug_info != "":
             super().__init__(ticker, f"no price data found {debug_info}")
         else:
             super().__init__(ticker, "no price data found")
@@ -44,4 +46,6 @@ class YFInvalidPeriodError(YFException):
         self.ticker = ticker
         self.invalid_period = invalid_period
         self.valid_ranges = valid_ranges
-        super().__init__(f"{self.ticker}: Period '{invalid_period}' is invalid, must be one of {valid_ranges}")
+        super().__init__(
+            f"{self.ticker}: Period '{invalid_period}' is invalid, must be one of {valid_ranges}"
+        )

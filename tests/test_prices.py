@@ -50,16 +50,21 @@ class TestPriceHistory(unittest.TestCase):
         self.assertEqual(df.index.tz, _dt.timezone.utc)
 
     def test_download_with_invalid_ticker(self):
-        #Checks if using an invalid symbol gives the same output as not using an invalid symbol in combination with a valid symbol (AAPL)
-        #Checks to make sure that invalid symbol handling for the date column is the same as the base case (no invalid symbols)
+        # Checks if using an invalid symbol gives the same output as not using an invalid symbol in combination with a valid symbol (AAPL)
+        # Checks to make sure that invalid symbol handling for the date column is the same as the base case (no invalid symbols)
 
-        invalid_tkrs = ["AAPL", "ATVI"] #AAPL exists and ATVI does not exist
-        valid_tkrs = ["AAPL", "INTC"] #AAPL and INTC both exist
+        invalid_tkrs = ["AAPL", "ATVI"]  # AAPL exists and ATVI does not exist
+        valid_tkrs = ["AAPL", "INTC"]  # AAPL and INTC both exist
 
-        data_invalid_sym = yf.download(invalid_tkrs, start='2023-11-16', end='2023-11-17')
-        data_valid_sym = yf.download(valid_tkrs, start='2023-11-16', end='2023-11-17')
+        data_invalid_sym = yf.download(
+            invalid_tkrs, start="2023-11-16", end="2023-11-17"
+        )
+        data_valid_sym = yf.download(valid_tkrs, start="2023-11-16", end="2023-11-17")
 
-        self.assertEqual(data_invalid_sym['Close']['AAPL']['2023-11-16'],data_valid_sym['Close']['AAPL']['2023-11-16'])
+        self.assertEqual(
+            data_invalid_sym["Close"]["AAPL"]["2023-11-16"],
+            data_valid_sym["Close"]["AAPL"]["2023-11-16"],
+        )
 
     def test_duplicatingHourly(self):
         tkrs = ["IMP.JO", "BHG.JO", "SSW.JO", "BP.L", "INTC"]
@@ -104,10 +109,12 @@ class TestPriceHistory(unittest.TestCase):
                 raise
 
         if not test_run:
-            self.skipTest("Skipping test_duplicatingDaily() because only expected to fail just after market close")
+            self.skipTest(
+                "Skipping test_duplicatingDaily() because only expected to fail just after market close"
+            )
 
     def test_duplicatingWeekly(self):
-        tkrs = ['MSFT', 'IWO', 'VFINX', '^GSPC', 'BTC-USD']
+        tkrs = ["MSFT", "IWO", "VFINX", "^GSPC", "BTC-USD"]
         test_run = False
         for tkr in tkrs:
             dat = yf.Ticker(tkr, session=self.session)
@@ -125,31 +132,37 @@ class TestPriceHistory(unittest.TestCase):
                 self.assertNotEqual(dt0.week, dt1.week)
             except AssertionError:
                 print("Ticker={}: Last two rows within same week:".format(tkr))
-                print(df.iloc[df.shape[0] - 2:])
+                print(df.iloc[df.shape[0] - 2 :])
                 raise
 
         if not test_run:
-            self.skipTest("Skipping test_duplicatingWeekly() because not possible to fail Monday/weekend")
+            self.skipTest(
+                "Skipping test_duplicatingWeekly() because not possible to fail Monday/weekend"
+            )
 
     def test_pricesEventsMerge(self):
         # Test case: dividend occurs after last row in price data
-        tkr = 'INTC'
+        tkr = "INTC"
         start_d = _dt.date(2022, 1, 1)
         end_d = _dt.date(2023, 1, 1)
-        df = yf.Ticker(tkr, session=self.session).history(interval='1d', start=start_d, end=end_d)
+        df = yf.Ticker(tkr, session=self.session).history(
+            interval="1d", start=start_d, end=end_d
+        )
         div = 1.0
         future_div_dt = df.index[-1] + _dt.timedelta(days=1)
         if future_div_dt.weekday() in [5, 6]:
             future_div_dt += _dt.timedelta(days=1) * (7 - future_div_dt.weekday())
-        divs = _pd.DataFrame(data={"Dividends":[div]}, index=[future_div_dt])
-        df2 = yf.utils.safe_merge_dfs(df.drop(['Dividends', 'Stock Splits'], axis=1), divs, '1d')
+        divs = _pd.DataFrame(data={"Dividends": [div]}, index=[future_div_dt])
+        df2 = yf.utils.safe_merge_dfs(
+            df.drop(["Dividends", "Stock Splits"], axis=1), divs, "1d"
+        )
         self.assertIn(future_div_dt, df2.index)
         self.assertIn("Dividends", df2.columns)
-        self.assertEqual(df2['Dividends'].iloc[-1], div)
+        self.assertEqual(df2["Dividends"].iloc[-1], div)
 
     def test_pricesEventsMerge_bug(self):
         # Reproduce exception when merging intraday prices with future dividend
-        interval = '30m'
+        interval = "30m"
         df_index = []
         d = 13
         for h in range(0, 16):
@@ -158,11 +171,11 @@ class TestPriceHistory(unittest.TestCase):
         df_index.append(_dt.datetime(2023, 9, d, 16))
         df = _pd.DataFrame(index=df_index)
         df.index = _pd.to_datetime(df.index)
-        df['Close'] = 1.0
+        df["Close"] = 1.0
 
         div = 1.0
         future_div_dt = _dt.datetime(2023, 9, 14, 10)
-        divs = _pd.DataFrame(data={"Dividends":[div]}, index=[future_div_dt])
+        divs = _pd.DataFrame(data={"Dividends": [div]}, index=[future_div_dt])
 
         yf.utils.safe_merge_dfs(df, divs, interval)
         # No exception = test pass
@@ -173,24 +186,30 @@ class TestPriceHistory(unittest.TestCase):
         for tkr in tkrs:
             start_d = _dt.date.today() - _dt.timedelta(days=59)
             end_d = None
-            df_daily = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="1d", actions=True)
+            df_daily = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="1d", actions=True
+            )
             df_daily_divs = df_daily["Dividends"][df_daily["Dividends"] != 0]
             if df_daily_divs.shape[0] == 0:
                 continue
 
             start_d = df_daily_divs.index[0].date()
             end_d = df_daily_divs.index[-1].date() + _dt.timedelta(days=1)
-            df_intraday = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="15m", actions=True)
+            df_intraday = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="15m", actions=True
+            )
             self.assertTrue((df_intraday["Dividends"] != 0.0).any())
 
             df_intraday_divs = df_intraday["Dividends"][df_intraday["Dividends"] != 0]
-            df_intraday_divs.index = df_intraday_divs.index.floor('D')
+            df_intraday_divs.index = df_intraday_divs.index.floor("D")
             self.assertTrue(df_daily_divs.equals(df_intraday_divs))
 
             test_run = True
 
         if not test_run:
-            self.skipTest("Skipping test_intraDayWithEvents() because no tickers had a dividend in last 60 days")
+            self.skipTest(
+                "Skipping test_intraDayWithEvents() because no tickers had a dividend in last 60 days"
+            )
 
     def test_intraDayWithEvents_tase(self):
         # TASE dividend release pre-market, doesn't merge nicely with intra-day data so check still present
@@ -200,46 +219,67 @@ class TestPriceHistory(unittest.TestCase):
         for tkr in tase_tkrs:
             start_d = _dt.date.today() - _dt.timedelta(days=59)
             end_d = None
-            df_daily = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="1d", actions=True)
+            df_daily = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="1d", actions=True
+            )
             df_daily_divs = df_daily["Dividends"][df_daily["Dividends"] != 0]
             if df_daily_divs.shape[0] == 0:
                 continue
 
             start_d = df_daily_divs.index[0].date()
             end_d = df_daily_divs.index[-1].date() + _dt.timedelta(days=1)
-            df_intraday = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="15m", actions=True)
+            df_intraday = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="15m", actions=True
+            )
             self.assertTrue((df_intraday["Dividends"] != 0.0).any())
 
             df_intraday_divs = df_intraday["Dividends"][df_intraday["Dividends"] != 0]
-            df_intraday_divs.index = df_intraday_divs.index.floor('D')
+            df_intraday_divs.index = df_intraday_divs.index.floor("D")
             self.assertTrue(df_daily_divs.equals(df_intraday_divs))
 
             test_run = True
 
         if not test_run:
-            self.skipTest("Skipping test_intraDayWithEvents_tase() because no tickers had a dividend in last 60 days")
+            self.skipTest(
+                "Skipping test_intraDayWithEvents_tase() because no tickers had a dividend in last 60 days"
+            )
 
     def test_dailyWithEvents(self):
         start_d = _dt.date(2022, 1, 1)
         end_d = _dt.date(2023, 1, 1)
 
-        tkr_div_dates = {'BHP.AX': [_dt.date(2022, 9, 1), _dt.date(2022, 2, 24)],  # Yahoo claims 23-Feb but wrong because DST
-                         'IMP.JO': [_dt.date(2022, 9, 21), _dt.date(2022, 3, 16)],
-                         'BP.L': [_dt.date(2022, 11, 10), _dt.date(2022, 8, 11), _dt.date(2022, 5, 12),
-                                  _dt.date(2022, 2, 17)],
-                         'INTC': [_dt.date(2022, 11, 4), _dt.date(2022, 8, 4), _dt.date(2022, 5, 5),
-                                  _dt.date(2022, 2, 4)]}
+        tkr_div_dates = {
+            "BHP.AX": [
+                _dt.date(2022, 9, 1),
+                _dt.date(2022, 2, 24),
+            ],  # Yahoo claims 23-Feb but wrong because DST
+            "IMP.JO": [_dt.date(2022, 9, 21), _dt.date(2022, 3, 16)],
+            "BP.L": [
+                _dt.date(2022, 11, 10),
+                _dt.date(2022, 8, 11),
+                _dt.date(2022, 5, 12),
+                _dt.date(2022, 2, 17),
+            ],
+            "INTC": [
+                _dt.date(2022, 11, 4),
+                _dt.date(2022, 8, 4),
+                _dt.date(2022, 5, 5),
+                _dt.date(2022, 2, 4),
+            ],
+        }
 
         for tkr, dates in tkr_div_dates.items():
-            df = yf.Ticker(tkr, session=self.session).history(interval='1d', start=start_d, end=end_d)
-            df_divs = df[df['Dividends'] != 0].sort_index(ascending=False)
+            df = yf.Ticker(tkr, session=self.session).history(
+                interval="1d", start=start_d, end=end_d
+            )
+            df_divs = df[df["Dividends"] != 0].sort_index(ascending=False)
             try:
                 self.assertTrue((df_divs.index.date == dates).all())
             except AssertionError:
-                print(f'- ticker = {tkr}')
-                print('- response:')
+                print(f"- ticker = {tkr}")
+                print("- response:")
                 print(df_divs.index.date)
-                print('- answer:')
+                print("- answer:")
                 print(dates)
                 raise
 
@@ -249,8 +289,12 @@ class TestPriceHistory(unittest.TestCase):
         tkr2 = "GDX"
         start_d = "2014-12-29"
         end_d = "2020-11-29"
-        df1 = yf.Ticker(tkr1).history(start=start_d, end=end_d, interval="1d", actions=True)
-        df2 = yf.Ticker(tkr2).history(start=start_d, end=end_d, interval="1d", actions=True)
+        df1 = yf.Ticker(tkr1).history(
+            start=start_d, end=end_d, interval="1d", actions=True
+        )
+        df2 = yf.Ticker(tkr2).history(
+            start=start_d, end=end_d, interval="1d", actions=True
+        )
         self.assertTrue(((df1["Dividends"] > 0) | (df1["Stock Splits"] > 0)).any())
         self.assertTrue(((df2["Dividends"] > 0) | (df2["Stock Splits"] > 0)).any())
         try:
@@ -265,23 +309,38 @@ class TestPriceHistory(unittest.TestCase):
         # Test that index same with and without events:
         tkrs = [tkr1, tkr2]
         for tkr in tkrs:
-            df1 = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="1d", actions=True)
-            df2 = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="1d", actions=False)
+            df1 = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="1d", actions=True
+            )
+            df2 = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="1d", actions=False
+            )
             self.assertTrue(((df1["Dividends"] > 0) | (df1["Stock Splits"] > 0)).any())
             try:
                 self.assertTrue(df1.index.equals(df2.index))
             except AssertionError:
                 missing_from_df1 = df2.index.difference(df1.index)
                 missing_from_df2 = df1.index.difference(df2.index)
-                print("{}-with-events missing these dates: {}".format(tkr, missing_from_df1))
-                print("{}-without-events missing these dates: {}".format(tkr, missing_from_df2))
+                print(
+                    "{}-with-events missing these dates: {}".format(
+                        tkr, missing_from_df1
+                    )
+                )
+                print(
+                    "{}-without-events missing these dates: {}".format(
+                        tkr, missing_from_df2
+                    )
+                )
                 raise
 
         # Reproduce issue #1634 - 1d dividend out-of-range, should be prepended to prices
         div_dt = _pd.Timestamp(2022, 7, 21).tz_localize("America/New_York")
-        df_dividends = _pd.DataFrame(data={"Dividends":[1.0]}, index=[div_dt])
-        df_prices = _pd.DataFrame(data={c:[1.0] for c in yf.const._PRICE_COLNAMES_}|{'Volume':0}, index=[div_dt+_dt.timedelta(days=1)])
-        df_merged = yf.utils.safe_merge_dfs(df_prices, df_dividends, '1d')
+        df_dividends = _pd.DataFrame(data={"Dividends": [1.0]}, index=[div_dt])
+        df_prices = _pd.DataFrame(
+            data={c: [1.0] for c in yf.const._PRICE_COLNAMES_} | {"Volume": 0},
+            index=[div_dt + _dt.timedelta(days=1)],
+        )
+        df_merged = yf.utils.safe_merge_dfs(df_prices, df_dividends, "1d")
         self.assertEqual(df_merged.shape[0], 2)
         self.assertTrue(df_merged[df_prices.columns].iloc[1:].equals(df_prices))
         self.assertEqual(df_merged.index[0], div_dt)
@@ -292,8 +351,12 @@ class TestPriceHistory(unittest.TestCase):
         tkr2 = "GDX"
         start_d = "2014-12-29"
         end_d = "2020-11-29"
-        df1 = yf.Ticker(tkr1).history(start=start_d, end=end_d, interval="1wk", actions=True)
-        df2 = yf.Ticker(tkr2).history(start=start_d, end=end_d, interval="1wk", actions=True)
+        df1 = yf.Ticker(tkr1).history(
+            start=start_d, end=end_d, interval="1wk", actions=True
+        )
+        df2 = yf.Ticker(tkr2).history(
+            start=start_d, end=end_d, interval="1wk", actions=True
+        )
         self.assertTrue(((df1["Dividends"] > 0) | (df1["Stock Splits"] > 0)).any())
         self.assertTrue(((df2["Dividends"] > 0) | (df2["Stock Splits"] > 0)).any())
         try:
@@ -308,16 +371,28 @@ class TestPriceHistory(unittest.TestCase):
         # Test that index same with and without events:
         tkrs = [tkr1, tkr2]
         for tkr in tkrs:
-            df1 = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="1wk", actions=True)
-            df2 = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="1wk", actions=False)
+            df1 = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="1wk", actions=True
+            )
+            df2 = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="1wk", actions=False
+            )
             self.assertTrue(((df1["Dividends"] > 0) | (df1["Stock Splits"] > 0)).any())
             try:
                 self.assertTrue(df1.index.equals(df2.index))
             except AssertionError:
                 missing_from_df1 = df2.index.difference(df1.index)
                 missing_from_df2 = df1.index.difference(df2.index)
-                print("{}-with-events missing these dates: {}".format(tkr, missing_from_df1))
-                print("{}-without-events missing these dates: {}".format(tkr, missing_from_df2))
+                print(
+                    "{}-with-events missing these dates: {}".format(
+                        tkr, missing_from_df1
+                    )
+                )
+                print(
+                    "{}-without-events missing these dates: {}".format(
+                        tkr, missing_from_df2
+                    )
+                )
                 raise
 
     def test_monthlyWithEvents(self):
@@ -325,8 +400,12 @@ class TestPriceHistory(unittest.TestCase):
         tkr2 = "GDX"
         start_d = "2014-12-29"
         end_d = "2020-11-29"
-        df1 = yf.Ticker(tkr1).history(start=start_d, end=end_d, interval="1mo", actions=True)
-        df2 = yf.Ticker(tkr2).history(start=start_d, end=end_d, interval="1mo", actions=True)
+        df1 = yf.Ticker(tkr1).history(
+            start=start_d, end=end_d, interval="1mo", actions=True
+        )
+        df2 = yf.Ticker(tkr2).history(
+            start=start_d, end=end_d, interval="1mo", actions=True
+        )
         self.assertTrue(((df1["Dividends"] > 0) | (df1["Stock Splits"] > 0)).any())
         self.assertTrue(((df2["Dividends"] > 0) | (df2["Stock Splits"] > 0)).any())
         try:
@@ -341,16 +420,28 @@ class TestPriceHistory(unittest.TestCase):
         # Test that index same with and without events:
         tkrs = [tkr1, tkr2]
         for tkr in tkrs:
-            df1 = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="1mo", actions=True)
-            df2 = yf.Ticker(tkr, session=self.session).history(start=start_d, end=end_d, interval="1mo", actions=False)
+            df1 = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="1mo", actions=True
+            )
+            df2 = yf.Ticker(tkr, session=self.session).history(
+                start=start_d, end=end_d, interval="1mo", actions=False
+            )
             self.assertTrue(((df1["Dividends"] > 0) | (df1["Stock Splits"] > 0)).any())
             try:
                 self.assertTrue(df1.index.equals(df2.index))
             except AssertionError:
                 missing_from_df1 = df2.index.difference(df1.index)
                 missing_from_df2 = df1.index.difference(df2.index)
-                print("{}-with-events missing these dates: {}".format(tkr, missing_from_df1))
-                print("{}-without-events missing these dates: {}".format(tkr, missing_from_df2))
+                print(
+                    "{}-with-events missing these dates: {}".format(
+                        tkr, missing_from_df1
+                    )
+                )
+                print(
+                    "{}-without-events missing these dates: {}".format(
+                        tkr, missing_from_df2
+                    )
+                )
                 raise
 
     def test_monthlyWithEvents2(self):
@@ -358,14 +449,16 @@ class TestPriceHistory(unittest.TestCase):
         dfm = yf.Ticker("ABBV").history(period="max", interval="1mo")
         dfd = yf.Ticker("ABBV").history(period="max", interval="1d")
         dfd = dfd[dfd.index > dfm.index[0]]
-        dfm_divs = dfm[dfm['Dividends'] != 0]
-        dfd_divs = dfd[dfd['Dividends'] != 0]
+        dfm_divs = dfm[dfm["Dividends"] != 0]
+        dfd_divs = dfd[dfd["Dividends"] != 0]
         self.assertEqual(dfm_divs.shape[0], dfd_divs.shape[0])
 
     def test_tz_dst_ambiguous(self):
         # Reproduce issue #1100
         try:
-            yf.Ticker("ESLT.TA", session=self.session).history(start="2002-10-06", end="2002-10-09", interval="1d")
+            yf.Ticker("ESLT.TA", session=self.session).history(
+                start="2002-10-06", end="2002-10-09", interval="1d"
+            )
         except _tz.exceptions.AmbiguousTimeError:
             raise Exception("Ambiguous DST issue not resolved")
 
@@ -408,17 +501,25 @@ class TestPriceHistory(unittest.TestCase):
         # Run
         start_d = special_day - _dt.timedelta(days=7)
         end_d = special_day + _dt.timedelta(days=7)
-        df = dat.history(start=start_d, end=end_d, interval="1h", prepost=False, keepna=True)
+        df = dat.history(
+            start=start_d, end=end_d, interval="1h", prepost=False, keepna=True
+        )
         tg_last_dt = df.loc[str(special_day)].index[-1]
         self.assertTrue(tg_last_dt.time() < time_early_close)
 
         # Test no other afternoons (or mornings) were pruned
         start_d = _dt.date(special_day.year, 1, 1)
-        end_d = _dt.date(special_day.year+1, 1, 1)
-        df = dat.history(start=start_d, end=end_d, interval="1h", prepost=False, keepna=True)
+        end_d = _dt.date(special_day.year + 1, 1, 1)
+        df = dat.history(
+            start=start_d, end=end_d, interval="1h", prepost=False, keepna=True
+        )
         last_dts = _pd.Series(df.index).groupby(df.index.date).last()
-        dfd = dat.history(start=start_d, end=end_d, interval='1d', prepost=False, keepna=True)
-        self.assertTrue(_np.equal(dfd.index.date, _pd.to_datetime(last_dts.index).date).all())
+        dfd = dat.history(
+            start=start_d, end=end_d, interval="1d", prepost=False, keepna=True
+        )
+        self.assertTrue(
+            _np.equal(dfd.index.date, _pd.to_datetime(last_dts.index).date).all()
+        )
 
     def test_prune_post_intraday_asx(self):
         # Setup
@@ -428,11 +529,17 @@ class TestPriceHistory(unittest.TestCase):
 
         # Test no other afternoons (or mornings) were pruned
         start_d = _dt.date(2023, 1, 1)
-        end_d = _dt.date(2023+1, 1, 1)
-        df = dat.history(start=start_d, end=end_d, interval="1h", prepost=False, keepna=True)
+        end_d = _dt.date(2023 + 1, 1, 1)
+        df = dat.history(
+            start=start_d, end=end_d, interval="1h", prepost=False, keepna=True
+        )
         last_dts = _pd.Series(df.index).groupby(df.index.date).last()
-        dfd = dat.history(start=start_d, end=end_d, interval='1d', prepost=False, keepna=True)
-        self.assertTrue(_np.equal(dfd.index.date, _pd.to_datetime(last_dts.index).date).all())
+        dfd = dat.history(
+            start=start_d, end=end_d, interval="1d", prepost=False, keepna=True
+        )
+        self.assertTrue(
+            _np.equal(dfd.index.date, _pd.to_datetime(last_dts.index).date).all()
+        )
 
     def test_weekly_2rows_fix(self):
         tkr = "AMZN"
@@ -454,5 +561,5 @@ class TestPriceHistory(unittest.TestCase):
         dat.history(start=start, end=end, interval=interval)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -8,15 +8,18 @@ Specific test class:
    python -m unittest tests.utils.TestTicker
 
 """
+
 from datetime import datetime
 from unittest import TestSuite
 
 import pandas as pd
+
 # import numpy as np
 
 from tests.context import yfinance as yf
 
 import unittest
+
 # import requests_cache
 import tempfile
 import os
@@ -34,7 +37,7 @@ class TestCache(unittest.TestCase):
 
     def test_storeTzNoRaise(self):
         # storing TZ to cache should never raise exception
-        tkr = 'AMZN'
+        tkr = "AMZN"
         tz1 = "America/New_York"
         tz2 = "London/Europe"
         cache = yf.cache.get_tz_cache()
@@ -44,12 +47,14 @@ class TestCache(unittest.TestCase):
     def test_setTzCacheLocation(self):
         self.assertEqual(yf.cache._TzDBManager.get_location(), self.tempCacheDir.name)
 
-        tkr = 'AMZN'
+        tkr = "AMZN"
         tz1 = "America/New_York"
         cache = yf.cache.get_tz_cache()
         cache.store(tkr, tz1)
 
-        self.assertTrue(os.path.exists(os.path.join(self.tempCacheDir.name, "tkr-tz.db")))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.tempCacheDir.name, "tkr-tz.db"))
+        )
 
 
 class TestCacheNoPermission(unittest.TestCase):
@@ -59,7 +64,7 @@ class TestCacheNoPermission(unittest.TestCase):
 
     def test_tzCacheRootStore(self):
         # Test that if cache path in read-only filesystem, no exception.
-        tkr = 'AMZN'
+        tkr = "AMZN"
         tz1 = "America/New_York"
 
         # During attempt to store, will discover cannot write
@@ -72,7 +77,7 @@ class TestCacheNoPermission(unittest.TestCase):
 
     def test_tzCacheRootLookup(self):
         # Test that if cache path in read-only filesystem, no exception.
-        tkr = 'AMZN'
+        tkr = "AMZN"
         # During attempt to lookup, will discover cannot write
         yf.cache.get_tz_cache().lookup(tkr)
 
@@ -107,11 +112,11 @@ class TestPandas(unittest.TestCase):
 
 def suite():
     ts: TestSuite = unittest.TestSuite()
-    ts.addTest(TestCache('Test cache'))
-    ts.addTest(TestCacheNoPermission('Test cache no permission'))
+    ts.addTest(TestCache("Test cache"))
+    ts.addTest(TestCacheNoPermission("Test cache no permission"))
     ts.addTest(TestPandas("Test pandas"))
     return ts
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

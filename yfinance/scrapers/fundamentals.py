@@ -8,6 +8,7 @@ from yfinance import utils, const
 from yfinance.data import YfData
 from yfinance.exceptions import YFException, YFNotImplementedError
 
+
 class Fundamentals:
 
     def __init__(self, data: YfData, symbol: str, proxy=None):
@@ -30,13 +31,16 @@ class Fundamentals:
 
     @property
     def earnings(self) -> dict:
-        warnings.warn("'Ticker.earnings' is deprecated as not available via API. Look for \"Net Income\" in Ticker.income_stmt.", DeprecationWarning)
+        warnings.warn(
+            "'Ticker.earnings' is deprecated as not available via API. Look for \"Net Income\" in Ticker.income_stmt.",
+            DeprecationWarning,
+        )
         return None
 
     @property
     def shares(self) -> pd.DataFrame:
         if self._shares is None:
-            raise YFNotImplementedError('shares')
+            raise YFNotImplementedError("shares")
         return self._shares
 
 
@@ -78,7 +82,9 @@ class Financials:
         if name not in allowed_names:
             raise ValueError(f"Illegal argument: name must be one of: {allowed_names}")
         if timescale not in allowed_timescales:
-            raise ValueError(f"Illegal argument: timescale must be one of: {allowed_timescales}")
+            raise ValueError(
+                f"Illegal argument: timescale must be one of: {allowed_timescales}"
+            )
 
         try:
             statement = self._create_financials_table(name, timescale, proxy)
@@ -86,7 +92,9 @@ class Financials:
             if statement is not None:
                 return statement
         except YFException as e:
-            utils.get_yf_logger().error(f"{self._symbol}: Failed to create {name} financials table for reason: {e}")
+            utils.get_yf_logger().error(
+                f"{self._symbol}: Failed to create {name} financials table for reason: {e}"
+            )
         return pd.DataFrame()
 
     def _create_financials_table(self, name, timescale, proxy):
@@ -101,7 +109,9 @@ class Financials:
         except Exception:
             pass
 
-    def get_financials_time_series(self, timescale, keys: list, proxy=None) -> pd.DataFrame:
+    def get_financials_time_series(
+        self, timescale, keys: list, proxy=None
+    ) -> pd.DataFrame:
         timescale_translation = {"yearly": "annual", "quarterly": "quarterly"}
         timescale = timescale_translation[timescale]
 
@@ -137,7 +147,9 @@ class Financials:
         for k, v in data_unpacked.items():
             if df is None:
                 df = pd.DataFrame(columns=dates, index=[k])
-            df.loc[k] = {pd.Timestamp(x["asOfDate"]): x["reportedValue"]["raw"] for x in v}
+            df.loc[k] = {
+                pd.Timestamp(x["asOfDate"]): x["reportedValue"]["raw"] for x in v
+            }
 
         df.index = df.index.str.replace("^" + timescale, "", regex=True)
 

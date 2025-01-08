@@ -35,7 +35,18 @@ __version__ = version.version
 __author__ = "Ran Aroussi"
 
 import warnings
-warnings.filterwarnings('default', category=DeprecationWarning, module='^yfinance')
 
-__all__ = ['download', 'Search', 'Ticker', 'Tickers', 'enable_debug_mode', 'set_tz_cache_location', 'Sector',
-           'Industry', 'EquityQuery', 'Screener']
+warnings.filterwarnings("default", category=DeprecationWarning, module="^yfinance")
+
+__all__ = [
+    "download",
+    "Search",
+    "Ticker",
+    "Tickers",
+    "enable_debug_mode",
+    "set_tz_cache_location",
+    "Sector",
+    "Industry",
+    "EquityQuery",
+    "Screener",
+]

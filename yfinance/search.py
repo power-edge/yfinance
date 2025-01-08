@@ -27,8 +27,17 @@ from .data import YfData
 
 
 class Search:
-    def __init__(self, query, max_results=8, news_count=8, enable_fuzzy_query=False,
-                 session=None, proxy=None, timeout=30, raise_errors=True):
+    def __init__(
+        self,
+        query,
+        max_results=8,
+        news_count=8,
+        enable_fuzzy_query=False,
+        session=None,
+        proxy=None,
+        timeout=30,
+        raise_errors=True,
+    ):
         """
         Fetches and organizes search results from Yahoo Finance, including stock quotes and news articles.
 
@@ -66,20 +75,26 @@ class Search:
             "enableFuzzyQuery": self.enable_fuzzy_query,
             "newsCount": self.news_count,
             "quotesQueryId": "tss_match_phrase_query",
-            "newsQueryId": "news_cie_vespa"
+            "newsQueryId": "news_cie_vespa",
         }
 
-        self._logger.debug(f'{self.query}: Yahoo GET parameters: {str(dict(params))}')
+        self._logger.debug(f"{self.query}: Yahoo GET parameters: {str(dict(params))}")
 
-        data = self._data.cache_get(url=url, params=params, proxy=self.proxy, timeout=self.timeout)
+        data = self._data.cache_get(
+            url=url, params=params, proxy=self.proxy, timeout=self.timeout
+        )
         if data is None or "Will be right back" in data.text:
-            raise RuntimeError("*** YAHOO! FINANCE IS CURRENTLY DOWN! ***\n"
-                               "Our engineers are working quickly to resolve "
-                               "the issue. Thank you for your patience.")
+            raise RuntimeError(
+                "*** YAHOO! FINANCE IS CURRENTLY DOWN! ***\n"
+                "Our engineers are working quickly to resolve "
+                "the issue. Thank you for your patience."
+            )
         try:
             data = data.json()
         except _json.JSONDecodeError:
-            self._logger.error(f"{self.query}: Failed to retrieve the news and received faulty response instead.")
+            self._logger.error(
+                f"{self.query}: Failed to retrieve the news and received faulty response instead."
+            )
             data = {}
 
         return data

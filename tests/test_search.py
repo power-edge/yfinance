@@ -9,7 +9,7 @@ class TestSearch(unittest.TestCase):
 
         self.assertEqual(len(search.quotes), 5)
         self.assertEqual(len(search.news), 3)
-        self.assertIn("AAPL", search.quotes[0]['symbol'])
+        self.assertIn("AAPL", search.quotes[0]["symbol"])
 
     def test_invalid_query(self):
         search = yf.Search(query="XYZXYZ")
@@ -28,4 +28,4 @@ class TestSearch(unittest.TestCase):
 
         # Check if the fuzzy search retrieves relevant results despite the typo
         self.assertGreater(len(search.quotes), 0)
-        self.assertIn("AAPL", search.quotes[0]['symbol'])
+        self.assertIn("AAPL", search.quotes[0]["symbol"])

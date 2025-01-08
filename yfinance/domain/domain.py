@@ -5,11 +5,12 @@ from ..data import YfData
 from typing import Dict, List, Optional
 import pandas as _pd
 
-_QUERY_URL_ = f'{_QUERY1_URL_}/v1/finance'
+_QUERY_URL_ = f"{_QUERY1_URL_}/v1/finance"
+
 
 class Domain(ABC):
     """
-    Abstract base class representing a domain entity in financial data, with key attributes 
+    Abstract base class representing a domain entity in financial data, with key attributes
     and methods for fetching and parsing data. Derived classes must implement the `_fetch_and_parse()` method.
     """
 
@@ -26,7 +27,7 @@ class Domain(ABC):
         self.proxy = proxy
         self.session = session
         self._data: YfData = YfData(session=session)
-        
+
         self._name: Optional[str] = None
         self._symbol: Optional[str] = None
         self._overview: Optional[Dict] = None
@@ -96,7 +97,7 @@ class Domain(ABC):
             pandas.DataFrame: A DataFrame containing the top companies in the domain.
         """
         self._ensure_fetched(self._top_companies)
-        return self._top_companies 
+        return self._top_companies
 
     @property
     def research_reports(self) -> List[Dict[str, str]]:
@@ -120,8 +121,18 @@ class Domain(ABC):
         Returns:
             Dict: The JSON response data from the request.
         """
-        params_dict = {"formatted": "true", "withReturns": "true", "lang": "en-US", "region": "US"}
-        result = self._data.get_raw_json(query_url, user_agent_headers=self._data.user_agent_headers, params=params_dict, proxy=proxy)
+        params_dict = {
+            "formatted": "true",
+            "withReturns": "true",
+            "lang": "en-US",
+            "region": "US",
+        }
+        result = self._data.get_raw_json(
+            query_url,
+            user_agent_headers=self._data.user_agent_headers,
+            params=params_dict,
+            proxy=proxy,
+        )
         return result
 
     def _parse_and_assign_common(self, data) -> None:
@@ -131,11 +142,11 @@ class Domain(ABC):
         Args:
             data (Dict): The raw data received from the API.
         """
-        self._name = data.get('name')
-        self._symbol = data.get('symbol')
-        self._overview = self._parse_overview(data.get('overview', {}))
-        self._top_companies = self._parse_top_companies(data.get('topCompanies', {}))
-        self._research_reports = data.get('researchReports')
+        self._name = data.get("name")
+        self._symbol = data.get("symbol")
+        self._overview = self._parse_overview(data.get("overview", {}))
+        self._top_companies = self._parse_top_companies(data.get("topCompanies", {}))
+        self._research_reports = data.get("researchReports")
 
     def _parse_overview(self, overview) -> Dict:
         """
@@ -148,13 +159,13 @@ class Domain(ABC):
             Dict: A dictionary containing parsed overview information.
         """
         return {
-            "companies_count": overview.get('companiesCount', None),
-            "market_cap": overview.get('marketCap', {}).get('raw', None),
-            "message_board_id": overview.get('messageBoardId', None),
-            "description": overview.get('description', None),
-            "industries_count": overview.get('industriesCount', None),
-            "market_weight": overview.get('marketWeight', {}).get('raw', None),
-            "employee_count": overview.get('employeeCount', {}).get('raw', None)
+            "companies_count": overview.get("companiesCount", None),
+            "market_cap": overview.get("marketCap", {}).get("raw", None),
+            "message_board_id": overview.get("messageBoardId", None),
+            "description": overview.get("description", None),
+            "industries_count": overview.get("industriesCount", None),
+            "market_weight": overview.get("marketWeight", {}).get("raw", None),
+            "employee_count": overview.get("employeeCount", {}).get("raw", None),
         }
 
     def _parse_top_companies(self, top_companies) -> Optional[_pd.DataFrame]:
@@ -167,24 +178,33 @@ class Domain(ABC):
         Returns:
             Optional[pandas.DataFrame]: A DataFrame containing top company data, or None if no data is available.
         """
-        top_companies_column = ['symbol', 'name', 'rating', 'market weight']
-        top_companies_values = [(c.get('symbol'), 
-                                c.get('name'), 
-                                c.get('rating'), 
-                                c.get('marketWeight',{}).get('raw',None)) for c in top_companies]
+        top_companies_column = ["symbol", "name", "rating", "market weight"]
+        top_companies_values = [
+            (
+                c.get("symbol"),
+                c.get("name"),
+                c.get("rating"),
+                c.get("marketWeight", {}).get("raw", None),
+            )
+            for c in top_companies
+        ]
 
-        if not top_companies_values: 
+        if not top_companies_values:
             return None
-        
-        return _pd.DataFrame(top_companies_values, columns=top_companies_column).set_index('symbol')
+
+        return _pd.DataFrame(
+            top_companies_values, columns=top_companies_column
+        ).set_index("symbol")
 
     @abstractmethod
     def _fetch_and_parse(self) -> None:
         """
-        Abstract method for fetching and parsing domain-specific data. 
+        Abstract method for fetching and parsing domain-specific data.
         Must be implemented by derived classes.
         """
-        raise NotImplementedError("_fetch_and_parse() needs to be implemented by children classes")
+        raise NotImplementedError(
+            "_fetch_and_parse() needs to be implemented by children classes"
+        )
 
     def _ensure_fetched(self, attribute) -> None:
         """
